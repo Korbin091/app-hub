@@ -56,14 +56,24 @@ function maybeNotify(app, status) {
   const prev = lastStatus.get(app.id);
   lastStatus.set(app.id, status);
   // Only notify on the online -> offline transition, not every failed check.
-  if (prev === "online" && status === "offline") {
-    if (os.platform() !== "darwin") return;
+  if (prev !== "online" || status !== "offline") return;
+
+  // Always log — on a headless cloud VM this shows up in `pm2 logs`.
+  console.warn(`[Hub] ALERT: ${app.name} went offline at ${new Date().toISOString()}`);
+
+  // Best-effort desktop notification where a notifier exists.
+  // execFile passes args without a shell, so there's no injection risk.
+  const platform = os.platform();
+  if (platform === "darwin") {
     const msg = escapeForOsascript(`${app.name} is down`);
     execFile(
       "osascript",
       ["-e", `display notification "${msg}" with title "App Hub Alert"`],
-      () => {} // best-effort; ignore errors
+      () => {}
     );
+  } else if (platform === "linux") {
+    // notify-send is a no-op/absent on headless servers; ignore failures.
+    execFile("notify-send", ["App Hub Alert", `${app.name} is down`], () => {});
   }
 }
 

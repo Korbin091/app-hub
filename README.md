@@ -22,13 +22,24 @@ See **[ACTION_PLAN.md](./ACTION_PLAN.md)** for the full build-out plan and miles
 
 ---
 
+## Where it runs
+
+This hub follows **Option B (Tailscale Funnel)** and is designed to run on an
+**always-on host joined to your tailnet** — recommended: a small **cloud VM**
+(Ubuntu/Debian) so the dashboard and apps are available 24/7 regardless of
+whether your Mac is awake. It runs equally well on a Mac or a home server.
+
+Private-by-default (only your tailnet devices can reach it) with a per-app
+**Funnel toggle** to expose any app over real public HTTPS on demand. See the
+**[Deploy on a cloud VM](#deploy-on-a-cloud-vm-recommended)** section below.
+
 ## Prerequisites
 
-1. A [Tailscale](https://tailscale.com) account, installed on this host (e.g. your Mac) and your phone.
+1. A [Tailscale](https://tailscale.com) account, installed on the **host** (cloud VM, Mac, or home server) and your phone.
 2. **MagicDNS** enabled (admin panel → Settings → DNS).
-3. **Funnel** enabled (admin panel → Settings → Feature Previews). Verify with `tailscale funnel status`.
+3. **Funnel** enabled (admin panel → Settings → Feature Previews). Verify on the host with `tailscale funnel status`.
 4. An **API access token** (admin panel → Settings → Keys).
-5. **Node.js 18+** and **git**.
+5. **Node.js 18+** and **git** on the host.
 
 ---
 
@@ -50,6 +61,46 @@ npm start
 
 Open `http://localhost:3000`, or from any tailnet device:
 `http://<this-host>.<tailnet>:3000` (shown as **Your Hub URL** in the header).
+
+---
+
+## Deploy on a cloud VM (recommended)
+
+Run the hub on a small always-on Linux VM (any provider — a $5–6/mo instance is
+plenty). The VM joins your tailnet, so the dashboard stays private-by-default
+and you keep the one-command Funnel toggle — but it's up 24/7.
+
+```bash
+# 1. Provision a small Ubuntu 22.04+ VM and SSH in.
+
+# 2. Install Node.js 18+ and git
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs git
+
+# 3. Install Tailscale and join YOUR tailnet (browser auth link prints to console)
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+# In the admin panel, enable Funnel (Settings > Feature Previews) and MagicDNS (Settings > DNS).
+tailscale funnel status   # should run without error
+
+# 4. Clone, configure, install
+git clone <this-repo> tailscale-hub && cd tailscale-hub
+npm install
+cp .env.example .env        # set TS_API_TOKEN, TAILNET, PORT=3000
+
+# 5. Run under PM2 and auto-start on boot (systemd)
+sudo npm install -g pm2
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup systemd         # prints a sudo command — run exactly what it outputs
+```
+
+Your hub is now reachable from any of your devices at
+`http://<vm-hostname>.<tailnet>:3000`. Register apps that run **on this same VM**
+(they listen on localhost ports; their `privateUrl` is `http://<vm-hostname>.<tailnet>:<port>`).
+
+> **Funnel on a cloud VM:** `tailscale funnel <port> on` exposes a port served on
+> *this VM*. Because your apps run on the same VM, the per-app toggle works as-is.
 
 ---
 
@@ -108,10 +159,12 @@ out-of-band CLI changes are picked up automatically.
 ```bash
 npm install -g pm2
 pm2 start ecosystem.config.js   # start the hub
-pm2 logs tailscale-hub          # view logs
+pm2 logs tailscale-hub          # view logs (down-alerts appear here)
 pm2 stop tailscale-hub          # stop
-pm2 startup                     # print the auto-start-on-login command, then run it
 pm2 save                        # persist the process list
+pm2 startup                     # print the boot-startup command, then run it
+#   - Linux cloud VM: prints a `sudo ... systemd` command
+#   - macOS:          prints a LaunchAgent command
 ```
 
 ---
@@ -133,7 +186,8 @@ pm2 save                        # persist the process list
 | MagicDNS URL won't resolve on iPhone | Use the host's tailnet IP + `:3000` as a fallback. |
 | Health check hangs | Checks use a 5s `AbortController` timeout and mark the app offline on abort — no hang. |
 | `apps.json` corrupted | Writes are atomic (temp file + rename); restore from an exported backup if needed. |
-| PM2 not auto-starting after restart | Run `pm2 startup`, run the command it prints, then `pm2 save`. |
+| PM2 not auto-starting after reboot | Run `pm2 startup` (systemd on a Linux VM, LaunchAgent on macOS), run the command it prints, then `pm2 save`. |
+| Down-alert notifications on a headless VM | There's no desktop to pop a notification — transitions are logged instead; see them in `pm2 logs tailscale-hub`. |
 | Funnel flags out of sync | The hub reconciles with live Funnel status on startup. |
 
 ---

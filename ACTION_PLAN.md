@@ -270,12 +270,13 @@ M3 and M4 are largely independent after M2 and could be parallelized, but the li
 
 ---
 
-## 9. Open Questions / Decisions to Confirm
+## 9. Decisions (resolved)
 
-1. **Build target:** Should this repo *become* the `tailscale-hub` implementation (recommended — build M0→M7 here), or stay planning-only?
-2. **Host device:** Mac assumed as dashboard host (per framework). Confirm, since `osascript` Mac-notifications and PM2 `startup` are macOS-specific.
-3. **Multi-device apps:** Framework assumes all apps run on the Mac host. Do any apps live on other tailnet nodes (changes how `privateUrl`/Funnel ports are derived)?
-4. **Auth on the dashboard itself:** Relies on tailnet membership for access control (no app-level login). Confirm that's acceptable.
+1. **Build target:** ✅ This repo *is* the implementation — M0→M7 built here.
+2. **Host device:** ✅ **Always-on cloud VM (Linux) joined to the tailnet** — Option B, hosted in the cloud for 24/7 availability while keeping private-by-default tailnet access. Down-alerts are platform-aware (osascript on macOS, `notify-send` on Linux, always logged for `pm2 logs`); PM2 boot-startup documented for systemd + LaunchAgent. See README → *Deploy on a cloud VM*.
+3. **App location:** ✅ Apps run **on the hub VM** (localhost ports); `privateUrl` = `http://<vm-hostname>.<tailnet>:<port>`. No multi-node handling needed for now.
+4. **App type:** ✅ Apps are **browser-based web apps** (opened on iPhone Safari / Chrome), each exposing the standard `/health` endpoint. (Pure browser extensions are out of scope — they have no port/URL to register.)
+5. **Dashboard auth:** ✅ **Tailnet membership** is the access gate — no app-level login. The Funnel guard keeps `Security`-category apps private regardless.
 
 ---
 
