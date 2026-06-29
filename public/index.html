@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My App Hub</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>" />
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar: tailnet devices -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">🚀 App Hub</div>
+      <div class="sidebar-section-title">Devices</div>
+      <ul id="device-list" class="device-list">
+        <li class="muted">Loading…</li>
+      </ul>
+      <div class="sidebar-footer muted" id="tailnet-label"></div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <header class="header">
+        <div class="header-top">
+          <h1>My App Hub</h1>
+          <button id="add-app-btn" class="btn btn-primary">+ Add App</button>
+        </div>
+        <div class="header-meta">
+          <span id="health-summary" class="pill">—</span>
+          <span class="hub-url" id="hub-url-wrap" hidden>
+            <span class="muted">Your Hub URL:</span>
+            <code id="hub-url"></code>
+            <button class="btn btn-ghost btn-sm" id="copy-hub-url">Copy</button>
+          </span>
+        </div>
+        <nav class="filters" id="category-filters"></nav>
+      </header>
+
+      <section id="app-grid" class="app-grid"></section>
+
+      <!-- Funnel status panel -->
+      <section class="funnel-panel">
+        <button class="funnel-panel-header" id="funnel-panel-toggle">
+          <span>🌐 Public (Funnel) apps</span>
+          <span id="funnel-count" class="pill">0</span>
+        </button>
+        <div class="funnel-panel-body" id="funnel-panel-body" hidden>
+          <ul id="funnel-list" class="funnel-list"></ul>
+          <div class="funnel-actions">
+            <button class="btn btn-danger btn-sm" id="retract-all">Retract All</button>
+            <button class="btn btn-ghost btn-sm" id="export-btn">Export registry</button>
+            <label class="btn btn-ghost btn-sm" for="import-input">Import registry</label>
+            <input id="import-input" type="file" accept="application/json" hidden />
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- App modal (add / edit) -->
+  <div class="modal-backdrop" id="app-modal" hidden>
+    <div class="modal">
+      <h2 id="modal-title">Add App</h2>
+      <form id="app-form">
+        <input type="hidden" id="f-id" />
+        <label>Name <input type="text" id="f-name" required /></label>
+        <label>Description <input type="text" id="f-description" /></label>
+        <div class="form-row">
+          <label>Port <input type="number" id="f-port" min="1" max="65535" required /></label>
+          <label>Icon <input type="text" id="f-icon" maxlength="4" placeholder="📦" /></label>
+        </div>
+        <label>Private URL
+          <input type="text" id="f-privateUrl" placeholder="http://host.tailnet.ts.net:8080" required />
+        </label>
+        <label>Category
+          <select id="f-category">
+            <option>Security</option>
+            <option>Tools</option>
+            <option>Media</option>
+            <option>Productivity</option>
+            <option>Dev</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <p class="form-error" id="form-error" hidden></p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="modal-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="modal-save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
